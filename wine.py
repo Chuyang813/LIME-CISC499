@@ -5,23 +5,25 @@ from lime import lime_tabular
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+
 
 '''
 trainning model
 '''
-df = pd.read_csv("Wine.csv")
+df = pd.read_csv("wine.csv")
 
 X = df.drop('quality', axis=1)
 y = df['quality']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-print(X_train.shape)
-print(X_test.shape)
+"""print(X_train.shape)
+print(X_test.shape)"""
 
 rfc = RandomForestClassifier(n_estimators=20,max_leaf_nodes=16,n_jobs=1)
 rfc.fit(X_train, y_train)
 
 rfc_res = rfc.predict(X_test)
-print(accuracy_score(y_test,rfc_res))
+"""print(accuracy_score(y_test,rfc_res))"""
 
 '''
 lime explain
@@ -36,12 +38,34 @@ idx = 8
 data_test = np.array(X_test.iloc[idx]).reshape(1, -1)
 prediction = rfc.predict(data_test)[0]
 y_true = np.array(y_test)[idx]
-print("id in testset: ",idx," rfc res: ", prediction," truth: ",y_true)
-
+"""print("id in testset: ",idx," rfc res: ", prediction," truth: ",y_true)
+"""
 exp = explainer.explain_instance(
     data_row=X_test.iloc[idx], 
-    predict_fn=rfc.predict_proba
+    predict_fn=rfc.predict_proba,
+    num_features=10
 )
 
 exp_list = exp.as_list()
-print(exp_list)
+"""print(exp_list)
+"""
+features = [feature for feature, weight in exp_list]
+weights = [weight for feature, weight in exp_list]
+
+# Create a color list to differentiate positive and negative weights
+colors = ['green' if weight > 0 else 'red' for weight in weights]
+
+# Create the horizontal bar chart
+plt.figure(figsize=(10, 6))
+y_pos = np.arange(len(features))
+plt.barh(y_pos, weights, color=colors, edgecolor='black')
+plt.yticks(y_pos, features)
+plt.xlabel('Feature Weights')
+plt.title('Feature Contribution to the Model Prediction')
+
+# Invert the y-axis to have the highest weight on top
+plt.gca().invert_yaxis()
+
+# Show the plot
+plt.tight_layout()
+plt.show()
